@@ -26,5 +26,5 @@ class AgentState:
     current_node: AgentNode | None = None
     retrieved_documents: list[DocumentChunk] = field(default_factory=list)
     activities: list[AgentActivity] = field(default_factory=list)
-    final_aswer: str | None = None
-    validation_result: str | None = None
+    final_answer: str | None = None
+    validation_passed: bool | None = None

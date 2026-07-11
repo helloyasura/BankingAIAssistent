@@ -21,4 +21,5 @@ class DocumentMetadata:
     sparse_score:float | None =None
     hybrid_score:float | None =None
     metadata:dict[str, str] = field(default_factory=dict)
-    
+
+DocumentChunk = DocumentMetadata

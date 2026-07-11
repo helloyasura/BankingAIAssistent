@@ -1,7 +1,7 @@
 
-from backend.app.application.dto.chat import HealthResponse
-from backend.app.config import Settings
-from backend.app.domain.ports.vector_store_port import VectorStorePort
+from app.application.dto.chat import HealthResponse
+from app.config import Settings
+from app.domain.ports.vector_store_port import VectorStorePort
 
 
 class HealthCheckUseCase: 
@@ -13,7 +13,7 @@ class HealthCheckUseCase:
         vector_ok = await self.vector_store.health_check()
         return HealthResponse(
             status="healthy" if vector_ok else "degraded",
-            version=self.setting.APP_VERSION,
-            environment=self.setting.ENVIRONMENT,
+            version=self.setting.app_version,
+            environment=self.setting.environment,
             dependencies={"vector_store": "healthy" if vector_ok else "degraded"}
         )

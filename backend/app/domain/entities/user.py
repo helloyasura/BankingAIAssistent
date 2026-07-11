@@ -5,6 +5,7 @@ from app.domain.value_objects.role import Role
 class User: 
     id:str
     email:str
+    display_name: str
     role: Role
     department: str | None = None
     

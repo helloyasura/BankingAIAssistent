@@ -11,5 +11,5 @@ class MessageRole(str, Enum):
 class Message:
     content: str
     role: MessageRole
-    id: str = field(defult_factory=lambda: str(uuid4()))
+    id: str = field(default_factory=lambda: str(uuid4()))
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
