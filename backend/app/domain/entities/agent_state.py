@@ -8,6 +8,8 @@ class AgentNode(str, Enum):
     SUPERVISOR = "supervisor"
     RETRIEVAL = "retrieval"
     RESEARCH = "research"
+    MCP_TOOLS = "mcp_tools"
+    PYTHON_ANALYSIS = "python_analysis"
     RESPONSE = "response"
     GUARDRAILS = "guardrails"
     HUMAN_APPROVAL = "human_approval"

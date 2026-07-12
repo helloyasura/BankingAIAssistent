@@ -4,14 +4,30 @@ from app.domain.entities.agent_state import AgentActivity, AgentNode, AgentState
 from app.domain.entities.user import User
 from app.domain.ports.agent_port import AgentOrchestratorPort
 from app.domain.ports.llm_port import LLMPort
+from app.domain.ports.mcp_port import MCPPort
+from app.domain.ports.python_analysis_port import PythonAnalysisPort
 from app.domain.ports.vector_store_port import VectorStorePort
+from app.domain.services.tool_authorization import ToolAuthorizationService
 from app.infrastructure.agent.graph.builder import build_agent_graph
 from app.infrastructure.agent.graph.nodes import GraphNodes
 
 
 class LangGraphOrchestrator(AgentOrchestratorPort):
-    def __init__(self, vector_store: VectorStorePort, llm: LLMPort) -> None:
-        nodes = GraphNodes(vector_store, llm)
+    def __init__(
+        self,
+        vector_store: VectorStorePort,
+        llm: LLMPort,
+        mcp: MCPPort,
+        python_analysis: PythonAnalysisPort,
+        authorization: ToolAuthorizationService | None = None,
+    ) -> None:
+        nodes = GraphNodes(
+            vector_store,
+            llm,
+            mcp,
+            python_analysis,
+            authorization=authorization,
+        )
         self._graph = build_agent_graph(nodes)
 
     async def run(
@@ -51,6 +67,7 @@ class LangGraphOrchestrator(AgentOrchestratorPort):
             "user_role": user.role.value,
             "message": message,
             "activities": [],
+            "tool_results": [],
         }
 
     def _to_agent_state(self, session_id: str, result: dict) -> AgentState:

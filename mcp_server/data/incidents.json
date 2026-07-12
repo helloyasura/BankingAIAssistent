@@ -1,0 +1,46 @@
+[
+  {
+    "id": "INC-2024-0318",
+    "title": "Payment Processing Degradation",
+    "severity": "P1",
+    "status": "resolved",
+    "department": "payments",
+    "root_cause": "Database connection pool saturation",
+    "keywords": ["connection pool", "latency", "payments", "peak load"],
+    "on_call": "Priya Sharma",
+    "resolved_date": "2024-03-20"
+  },
+  {
+    "id": "INC-2024-0412",
+    "title": "Fraud Scoring Pipeline Delay",
+    "severity": "P2",
+    "status": "resolved",
+    "department": "risk",
+    "root_cause": "Kafka consumer lag under burst traffic",
+    "keywords": ["kafka", "fraud", "consumer lag", "burst"],
+    "on_call": "Elena Vasquez",
+    "resolved_date": "2024-04-14"
+  },
+  {
+    "id": "INC-2024-0527",
+    "title": "Notification Hub Outage",
+    "severity": "P1",
+    "status": "mitigated",
+    "department": "infrastructure",
+    "root_cause": "Misconfigured autoscaling policy",
+    "keywords": ["notification", "autoscaling", "sms", "email"],
+    "on_call": "Marcus Lee",
+    "resolved_date": "2024-05-28"
+  },
+  {
+    "id": "INC-2024-0603",
+    "title": "Ledger Reconciliation Mismatch",
+    "severity": "P2",
+    "status": "investigating",
+    "department": "core-banking",
+    "root_cause": "Pending — suspected race condition in batch settlement",
+    "keywords": ["ledger", "reconciliation", "settlement", "race condition"],
+    "on_call": "James Okonkwo",
+    "resolved_date": null
+  }
+]

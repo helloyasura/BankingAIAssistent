@@ -7,13 +7,18 @@ from app.config import Settings, get_settings
 from app.domain.ports.agent_port import AgentOrchestratorPort
 from app.domain.ports.auth_port import AuthPort
 from app.domain.ports.memory_port import MemoryPort
+from app.domain.ports.mcp_port import MCPPort
+from app.domain.ports.python_analysis_port import PythonAnalysisPort
 from app.domain.ports.vector_store_port import VectorStorePort
 from app.domain.services.guardrails import GuardrailService
+from app.domain.services.tool_authorization import ToolAuthorizationService
 from app.infrastructure.agent.langgraph_orchestrator import LangGraphOrchestrator
 from app.infrastructure.auth.hardcoded_auth import HardcodedAuth
 from app.infrastructure.auth.jwt_service import JwtService
 from app.infrastructure.llm.openai_adapter import OpenAIAdapter
+from app.infrastructure.mcp.enterprise_mcp_adapter import EnterpriseMcpAdapter
 from app.infrastructure.memory.in_memory import InMemoryMemoryAdapter
+from app.infrastructure.tools.python_analysis import PythonAnalysisAdapter
 from app.infrastructure.vector_store.local_hybrid import LocalHybridVectorStoreAdapter
 from app.infrastructure.vector_store.pinecone_adapter import PineconeHybridAdapter
 from app.infrastructure.observerbility.langsmith_adapter import (
@@ -28,6 +33,8 @@ class Container:
     auth_port: AuthPort
     memory_port: MemoryPort
     vector_store_port: VectorStorePort
+    mcp_port: MCPPort
+    python_analysis_port: PythonAnalysisPort
     agent_port: AgentOrchestratorPort
     jwt_service: JwtService
     health_use_case: HealthCheckUseCase
@@ -55,7 +62,16 @@ def build_container(settings: Settings | None = None) -> Container:
     memory = InMemoryMemoryAdapter()
     vector_store = _build_vector_store(settings)
     llm = OpenAIAdapter(settings)
-    agent = LangGraphOrchestrator(vector_store, llm)
+    mcp = EnterpriseMcpAdapter()
+    python_analysis = PythonAnalysisAdapter()
+    authorization = ToolAuthorizationService()
+    agent = LangGraphOrchestrator(
+        vector_store,
+        llm,
+        mcp,
+        python_analysis,
+        authorization=authorization,
+    )
     jwt_service = JwtService(settings)
     observability = _build_observability(settings)
     return Container(
@@ -63,6 +79,8 @@ def build_container(settings: Settings | None = None) -> Container:
         auth_port=auth,
         memory_port=memory,
         vector_store_port=vector_store,
+        mcp_port=mcp,
+        python_analysis_port=python_analysis,
         agent_port=agent,
         jwt_service=jwt_service,
         health_use_case=HealthCheckUseCase(settings, vector_store),

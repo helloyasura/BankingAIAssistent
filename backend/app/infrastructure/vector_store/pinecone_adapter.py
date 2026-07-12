@@ -44,13 +44,25 @@ class PineconeHybridAdapter(VectorStorePort):
                 pass
         return await self._local.hybrid_search(query)
 
+    def _to_pinecone_filter(self, metadata_filters: dict[str, str]) -> dict | None:
+        if not metadata_filters:
+            return None
+        clauses = [{key: {"$eq": value}} for key, value in metadata_filters.items()]
+        if len(clauses) == 1:
+            return clauses[0]
+        return {"$and": clauses}
+
     def _pinecone_search_sync(self, query: RetrievalQuery) -> list[DocumentChunk]:
         vector = self._embeddings.embed_query(query.query)
-        results = self._index.query(
-            vector=vector,
-            top_k=query.top_k,
-            include_metadata=True,
-        )
+        query_kwargs = {
+            "vector": vector,
+            "top_k": query.top_k,
+            "include_metadata": True,
+            "namespace": self._settings.pinecone_namespace,
+        }
+        if pinecone_filter := self._to_pinecone_filter(query.metadata_filters):
+            query_kwargs["filter"] = pinecone_filter
+        results = self._index.query(**query_kwargs)
         chunks: list[DocumentChunk] = []
         for match in results.get("matches", []):
             metadata = match.get("metadata") or {}
@@ -95,7 +107,10 @@ class PineconeHybridAdapter(VectorStorePort):
                 }
             )
         if vectors:
-            self._index.upsert(vectors=vectors)
+            self._index.upsert(
+                vectors=vectors,
+                namespace=self._settings.pinecone_namespace,
+            )
 
     async def health_check(self) -> bool:
         local_ok = await self._local.health_check()

@@ -9,6 +9,7 @@ class GraphState(TypedDict, total=False):
     route: str
     retrieved_chunks: list[dict]
     research_findings: list[str]
+    tool_results: list[dict]
     activities: list[dict]
     final_answer: str
     validation_passed: bool

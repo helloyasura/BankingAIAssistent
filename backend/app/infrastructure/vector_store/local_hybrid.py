@@ -42,14 +42,28 @@ class LocalHybridVectorStoreAdapter(VectorStorePort):
     async def hybrid_search(self, query: RetrievalQuery) -> list[DocumentChunk]:
         return await asyncio.to_thread(self._search_sync, query)
 
+    def _matches_filters(self, chunk: DocumentChunk, filters: dict[str, str]) -> bool:
+        if not filters:
+            return True
+        return all(chunk.metadata.get(key) == value for key, value in filters.items())
+
     def _search_sync(self, query: RetrievalQuery) -> list[DocumentChunk]:
         if not self._chunks:
             self.load()
+        candidates = [
+            chunk
+            for chunk in self._chunks
+            if self._matches_filters(chunk, query.metadata_filters)
+        ]
+        if not candidates:
+            return []
+        candidate_indices = [self._chunks.index(chunk) for chunk in candidates]
         q_tokens = _tokenize(query.query)
         q_vec = Counter(q_tokens)
         bm25_scores = self._bm25.get_scores(q_tokens)
         ranked = []
-        for i, chunk in enumerate(self._chunks):
+        for i in candidate_indices:
+            chunk = self._chunks[i]
             dense = _cosine(q_vec, self._vectors[i])
             sparse = float(bm25_scores[i]) / (max(bm25_scores) or 1.0)
             score = query.dense_weights * dense + query.sparse_weight * sparse

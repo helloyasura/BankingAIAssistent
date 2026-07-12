@@ -1,0 +1,47 @@
+[
+  {
+    "name": "payment-gateway",
+    "team": "payments",
+    "owner": "Priya Sharma",
+    "status": "production",
+    "description": "Core card and ACH payment processing API",
+    "dependencies": ["account-ledger", "fraud-detection"],
+    "on_call_rotation": "payments-oncall"
+  },
+  {
+    "name": "account-ledger",
+    "team": "core-banking",
+    "owner": "James Okonkwo",
+    "status": "production",
+    "description": "Double-entry ledger and balance management",
+    "dependencies": ["postgres-cluster-primary"],
+    "on_call_rotation": "core-banking-oncall"
+  },
+  {
+    "name": "fraud-detection",
+    "team": "risk",
+    "owner": "Elena Vasquez",
+    "status": "production",
+    "description": "Real-time transaction scoring and rule engine",
+    "dependencies": ["payment-gateway", "customer-profile"],
+    "on_call_rotation": "risk-oncall"
+  },
+  {
+    "name": "customer-profile",
+    "team": "digital",
+    "owner": "Marcus Lee",
+    "status": "production",
+    "description": "Customer identity and preference service",
+    "dependencies": ["account-ledger"],
+    "on_call_rotation": "digital-oncall"
+  },
+  {
+    "name": "notification-hub",
+    "team": "infrastructure",
+    "owner": "Marcus Lee",
+    "status": "degraded",
+    "description": "SMS, email, and push notification dispatcher",
+    "dependencies": ["kafka-events"],
+    "on_call_rotation": "platform-sre"
+  }
+]
