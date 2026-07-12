@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from pathlib import Path
 
 from app.application.use_cases.chat import ChatUseCase
 from app.application.use_cases.health import HealthCheckUseCase
@@ -16,6 +15,11 @@ from app.infrastructure.auth.jwt_service import JwtService
 from app.infrastructure.llm.openai_adapter import OpenAIAdapter
 from app.infrastructure.memory.in_memory import InMemoryMemoryAdapter
 from app.infrastructure.vector_store.local_hybrid import LocalHybridVectorStoreAdapter
+from app.infrastructure.vector_store.pinecone_adapter import PineconeHybridAdapter
+from app.infrastructure.observerbility.langsmith_adapter import (
+    LangSmithObservabilityAdapter,
+    NoOpObservabilityAdapter,
+)
 
 
 @dataclass(slots=True)
@@ -31,15 +35,29 @@ class Container:
     chat_use_case: ChatUseCase
 
 
+def _build_observability(settings: Settings):
+    if settings.langchain_api_key and settings.langchain_tracing_v2:
+        return LangSmithObservabilityAdapter(settings)
+    return NoOpObservabilityAdapter()
+
+
+def _build_vector_store(settings: Settings) -> VectorStorePort:
+    if settings.pinecone_api_key:
+        return PineconeHybridAdapter(settings)
+    store = LocalHybridVectorStoreAdapter()
+    store.load()
+    return store
+
+
 def build_container(settings: Settings | None = None) -> Container:
     settings = settings or get_settings()
     auth = HardcodedAuth()
     memory = InMemoryMemoryAdapter()
-    vector_store = LocalHybridVectorStoreAdapter()
-    vector_store.load()
+    vector_store = _build_vector_store(settings)
     llm = OpenAIAdapter(settings)
     agent = LangGraphOrchestrator(vector_store, llm)
     jwt_service = JwtService(settings)
+    observability = _build_observability(settings)
     return Container(
         settings=settings,
         auth_port=auth,
@@ -49,5 +67,5 @@ def build_container(settings: Settings | None = None) -> Container:
         jwt_service=jwt_service,
         health_use_case=HealthCheckUseCase(settings, vector_store),
         login_use_case=LoginUseCase(auth, jwt_service),
-        chat_use_case=ChatUseCase(agent, memory, GuardrailService()),
+        chat_use_case=ChatUseCase(agent, memory, GuardrailService(), observability),
     )

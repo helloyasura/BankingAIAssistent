@@ -1,0 +1,4 @@
+[
+    {"name": "Priya Sharma", "role": "Payments On-Call", "department": "payments", "email": "priya@commercialbank.com"},
+    {"name": "Marcus Lee", "role": "Platform SRE", "department": "infrastructure", "email": "marcus@commercialbank.com"}
+  ]

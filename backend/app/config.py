@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 480
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    openai_embedding_model: str = "text-embedding-3-small"
+    pinecone_api_key: str = ""
+    pinecone_index_name: str = ""
+    langchain_tracing_v2: bool = False
+    langchain_api_key: str = ""
+    langchain_project: str = "commercial-bank-ai"
 
 
 @lru_cache

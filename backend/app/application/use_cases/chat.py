@@ -6,7 +6,9 @@ from app.domain.entities.message import Message, MessageRole
 from app.domain.entities.user import User
 from app.domain.ports.agent_port import AgentOrchestratorPort
 from app.domain.ports.memory_port import MemoryPort
+from app.domain.ports.observability_port import ObservabilityPort
 from app.domain.services.guardrails import GuardrailService, GuardrailVerdict
+from app.infrastructure.observerbility.langsmith_adapter import NoOpObservabilityAdapter
 
 
 class ChatUseCase:
@@ -15,10 +17,12 @@ class ChatUseCase:
         agent: AgentOrchestratorPort,
         memory: MemoryPort,
         guardrails: GuardrailService | None = None,
+        observability: ObservabilityPort | None = None,
     ) -> None:
         self._agent = agent
         self._memory = memory
         self._guardrails = guardrails or GuardrailService()
+        self._observability = observability or NoOpObservabilityAdapter()
 
     async def execute(self, user: User, request: ChatRequest) -> ChatResponse:
         session_id = request.session_id or str(uuid4())
@@ -34,7 +38,12 @@ class ChatUseCase:
         history = await self._memory.get_history(session_id)
         await self._memory.add_message(session_id, Message(content=request.message, role=MessageRole.USER))
 
-        state = await self._agent.run(user, session_id, request.message, approved=request.approved)
+        async with self._observability.trace_run(
+            "chat", session_id=session_id, user_id=user.id
+        ):
+            state = await self._agent.run(
+                user, session_id, request.message, approved=request.approved
+            )
 
         if state.final_answer:
             await self._memory.add_message(
@@ -71,22 +80,25 @@ class ChatUseCase:
 
         answer_content: str | None = None
         try:
-            async for event in self._agent.stream(
-                user, session_id, request.message, approved=request.approved
+            async with self._observability.trace_run(
+                "chat", session_id=session_id, user_id=user.id
             ):
-                if isinstance(event, str):
-                    answer_content = event
-                    yield {"type": "answer", "session_id": session_id, "content": event}
-                else:
-                    yield {
-                        "type": "activity",
-                        "session_id": session_id,
-                        "activity": {
-                            "node": event.node.value,
-                            "status": event.status,
-                            "detail": event.detail,
-                        },
-                    }
+                async for event in self._agent.stream(
+                    user, session_id, request.message, approved=request.approved
+                ):
+                    if isinstance(event, str):
+                        answer_content = event
+                        yield {"type": "answer", "session_id": session_id, "content": event}
+                    else:
+                        yield {
+                            "type": "activity",
+                            "session_id": session_id,
+                            "activity": {
+                                "node": event.node.value,
+                                "status": event.status,
+                                "detail": event.detail,
+                            },
+                        }
         except Exception as exc:
             fallback = f"Sorry, something went wrong while generating a response: {exc}"
             answer_content = fallback
