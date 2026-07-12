@@ -52,7 +52,7 @@ class LocalHybridVectorStoreAdapter(VectorStorePort):
         for i, chunk in enumerate(self._chunks):
             dense = _cosine(q_vec, self._vectors[i])
             sparse = float(bm25_scores[i]) / (max(bm25_scores) or 1.0)
-            score = query.dense_weight * dense + query.sparse_weight * sparse
+            score = query.dense_weights * dense + query.sparse_weight * sparse
             ranked.append((score, DocumentChunk(
                 id=chunk.id, document_id=chunk.document_id, title=chunk.title,
                 content=chunk.content, hybrid_score=score, metadata=chunk.metadata,
