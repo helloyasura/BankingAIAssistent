@@ -17,25 +17,41 @@ class LangGraphOrchestrator(AgentOrchestratorPort):
     async def run(
         self, user: User, session_id: str, message: str, *, approved: bool = False
     ) -> AgentState:
-        result = await self._graph.ainvoke(
-            {
-                "session_id": session_id,
-                "user_id": user.id,
-                "user_role": user.role.value,
-                "message": message,
-                "activities": [],
-            }
-        )
+        result = await self._graph.ainvoke(self._initial_state(user, session_id, message))
         return self._to_agent_state(session_id, result)
 
     async def stream(
         self, user: User, session_id: str, message: str, *, approved: bool = False
     ) -> AsyncIterator[AgentActivity | str]:
-        state = await self.run(user, session_id, message, approved=approved)
-        for activity in state.activities:
-            yield activity
-        if state.final_answer:
-            yield state.final_answer
+        seen_activities = 0
+        final_answer: str | None = None
+
+        async for chunk in self._graph.astream(self._initial_state(user, session_id, message)):
+            for node_output in chunk.values():
+                activities = node_output.get("activities", [])
+                while seen_activities < len(activities):
+                    item = activities[seen_activities]
+                    yield AgentActivity(
+                        node=AgentNode(item["node"]),
+                        status=item["status"],
+                        detail=item["detail"],
+                        metadata=item.get("metadata", {}),
+                    )
+                    seen_activities += 1
+                if answer := node_output.get("final_answer"):
+                    final_answer = answer
+
+        if final_answer:
+            yield final_answer
+
+    def _initial_state(self, user: User, session_id: str, message: str) -> dict:
+        return {
+            "session_id": session_id,
+            "user_id": user.id,
+            "user_role": user.role.value,
+            "message": message,
+            "activities": [],
+        }
 
     def _to_agent_state(self, session_id: str, result: dict) -> AgentState:
         activities = [

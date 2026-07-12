@@ -17,8 +17,11 @@ class OpenAIAdapter(LLMPort):
     async def generate(self, prompt: str) -> str:
         if self._client is None:
             return self._fallback_answer(prompt)
-        response = await self._client.ainvoke([HumanMessage(content=prompt)])
-        return str(response.content)
+        try:
+            response = await self._client.ainvoke([HumanMessage(content=prompt)])
+            return str(response.content)
+        except Exception:
+            return self._fallback_answer(prompt)
 
     def _fallback_answer(self, prompt: str) -> str:
         question_marker = "\n\nQuestion:"

@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from uuid import uuid4
 
 from app.application.dto.chat import AgentActivityDTO, ChatRequest, ChatResponse
@@ -50,3 +51,49 @@ class ChatUseCase:
             validation_passed=state.validation_passed,
             memory_message_count=len(history) + 1,
         )
+
+    async def stream(self, user: User, request: ChatRequest) -> AsyncIterator[dict]:
+        session_id = request.session_id or str(uuid4())
+
+        validation = self._guardrails.validate_user_input(request.message)
+        if validation.verdict == GuardrailVerdict.BLOCK:
+            yield {
+                "type": "answer",
+                "session_id": session_id,
+                "content": f"I cannot process that: {validation.reason}",
+                "validation_passed": False,
+            }
+            return
+
+        await self._memory.add_message(
+            session_id, Message(content=request.message, role=MessageRole.USER)
+        )
+
+        answer_content: str | None = None
+        try:
+            async for event in self._agent.stream(
+                user, session_id, request.message, approved=request.approved
+            ):
+                if isinstance(event, str):
+                    answer_content = event
+                    yield {"type": "answer", "session_id": session_id, "content": event}
+                else:
+                    yield {
+                        "type": "activity",
+                        "session_id": session_id,
+                        "activity": {
+                            "node": event.node.value,
+                            "status": event.status,
+                            "detail": event.detail,
+                        },
+                    }
+        except Exception as exc:
+            fallback = f"Sorry, something went wrong while generating a response: {exc}"
+            answer_content = fallback
+            yield {"type": "answer", "session_id": session_id, "content": fallback}
+
+        if answer_content:
+            await self._memory.add_message(
+                session_id,
+                Message(content=answer_content, role=MessageRole.ASSISTANT),
+            )
