@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     environment: str = "development"
     api_prefix: str = "/api/v1"
+    jwt_secret: str = "change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 480
 
 
 @lru_cache

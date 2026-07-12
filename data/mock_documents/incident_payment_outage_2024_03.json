@@ -1,0 +1,9 @@
+{
+    "id": "INC-2024-0318",
+    "title": "Payment Processing Degradation — March 2024",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2024-03-20",
+    "content": "Incident Summary: On 2024-03-18, payment processing latency exceeded SLA. Root Cause: Database connection pool saturation. Recurring theme: Connection pool exhaustion under peak load."
+  }
