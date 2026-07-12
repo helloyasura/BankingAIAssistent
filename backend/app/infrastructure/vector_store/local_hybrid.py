@@ -6,6 +6,7 @@ from pathlib import Path
 from rank_bm25 import BM25Okapi
 from app.domain.entities.document import DocumentChunk
 from app.domain.ports.vector_store_port import RetrievalQuery, VectorStorePort
+from app.infrastructure.vector_store.reranker import rerank_chunks
 
 _TOKEN = re.compile(r"[a-z0-9]+")
 
@@ -72,7 +73,9 @@ class LocalHybridVectorStoreAdapter(VectorStorePort):
                 content=chunk.content, hybrid_score=score, metadata=chunk.metadata,
             )))
         ranked.sort(key=lambda x: x[0], reverse=True)
-        return [c for _, c in ranked[: query.top_k]]
+        candidate_k = min(len(ranked), max(query.top_k * 2, query.top_k))
+        candidates = [c for _, c in ranked[:candidate_k]]
+        return rerank_chunks(query.query, candidates, top_k=query.top_k)
 
     async def upsert_documents(self, chunks: list[DocumentChunk]) -> int:
         self._chunks.extend(chunks)

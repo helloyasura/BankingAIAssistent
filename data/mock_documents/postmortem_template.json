@@ -1,0 +1,10 @@
+{
+    "id": "PM-TEMPLATE-PAY-001",
+    "title": "Payment Incident Postmortem Template",
+    "document_type": "template",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2024-01-25",
+    "tags": ["postmortem", "incident", "payments", "blameless"],
+    "content": "Payment Incident Postmortem Template\n\nSchedule within 48 hours of Sev-1/Sev-2 resolution. Blameless culture — focus on systems and process.\n\n1. Incident Summary\n- Incident ID, dates/times (UTC), duration, severity, customer impact.\n\n2. Timeline\n- Detection, acknowledgment, escalation, mitigation, recovery, all-clear.\n\n3. Root Cause Analysis\n- Primary cause (e.g., database connection pool saturation).\n- Contributing factors (peak load, config drift, missing alerts).\n\n4. What Went Well\n- Runbook steps that worked, comms timeliness, auto-scaling response.\n\n5. What Went Wrong\n- Detection gaps, escalation delays, tooling limitations.\n\n6. Action Items\n- Each item: owner, priority, due date, tracking ticket.\n- Categories: immediate fixes, monitoring, runbook updates, capacity planning.\n\n7. Lessons Learned\n- Link to related docs: Payment Outage Runbook, Database Pool Tuning Guide, SLA Policy.\n\nExample reference: INC-2024-0318 (March 2024 payment degradation) — root cause was connection pool exhaustion; actions included pool tuning and new pool utilization alerts."
+}

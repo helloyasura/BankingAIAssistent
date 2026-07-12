@@ -12,6 +12,9 @@ class NoOpObservabilityAdapter(ObservabilityPort):
     async def trace_run(self, name: str, **metadata: Any) -> AsyncIterator[None]:
         yield
 
+    async def log_feedback(self, **metadata: Any) -> None:
+        return None
+
 
 class LangSmithObservabilityAdapter(ObservabilityPort):
     def __init__(self, settings: Settings) -> None:
@@ -28,3 +31,9 @@ class LangSmithObservabilityAdapter(ObservabilityPort):
 
         with trace(name=name, metadata=metadata):
             yield
+
+    async def log_feedback(self, **metadata: Any) -> None:
+        from langsmith import trace
+
+        with trace(name="chat_feedback", metadata=metadata):
+            return None

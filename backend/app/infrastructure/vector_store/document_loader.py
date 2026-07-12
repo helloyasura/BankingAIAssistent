@@ -24,6 +24,7 @@ def load_document_chunks(data_dir: Path | None = None) -> list[DocumentChunk]:
                     "document_type": payload.get("document_type", ""),
                     "department": payload.get("department", ""),
                     "access_level": payload.get("access_level", ""),
+                    "tags": ",".join(payload.get("tags", [])),
                 },
             )
         )

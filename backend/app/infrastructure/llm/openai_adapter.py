@@ -16,14 +16,14 @@ class OpenAIAdapter(LLMPort):
 
     async def generate(self, prompt: str) -> str:
         if self._client is None:
-            return self._fallback_answer(prompt)
+            return self._fallback_answer(prompt, api_unavailable=True)
         try:
             response = await self._client.ainvoke([HumanMessage(content=prompt)])
             return str(response.content)
         except Exception:
-            return self._fallback_answer(prompt)
+            return self._fallback_answer(prompt, api_unavailable=True)
 
-    def _fallback_answer(self, prompt: str) -> str:
+    def _fallback_answer(self, prompt: str, *, api_unavailable: bool = False) -> str:
         question_marker = "\n\nQuestion:"
         for marker in (
             "Tool results:\n",
@@ -42,7 +42,22 @@ class OpenAIAdapter(LLMPort):
                     if marker.startswith("Summarize"):
                         return body[:600]
                     return f"Based on the available documents:\n\n{body[:800]}"
-        return "No answer could be generated without an OpenAI API key."
+                if marker in {"Context:\n", "Findings:\n"}:
+                    return (
+                        "I couldn't find relevant documents for your question. "
+                        "Try rephrasing or ask about incidents, payments, or on-call contacts."
+                    )
+        if not self._settings.openai_api_key.strip():
+            return (
+                "OpenAI is not configured. Set OPENAI_API_KEY in .env and restart the API server."
+            )
+        if api_unavailable:
+            return (
+                "OpenAI is unavailable (quota exceeded, rate limited, or API error). "
+                "Add billing/credits at platform.openai.com, or use MCP/analysis queries "
+                "that return formatted results without the LLM."
+            )
+        return "No answer could be generated."
 
     def _format_tool_results_fallback(self, body: str) -> str:
         """Best-effort formatting when MCP tool results are present but OpenAI is unavailable."""

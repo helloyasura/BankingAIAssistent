@@ -6,10 +6,23 @@ from app.domain.entities.user import User
 class AgentOrchestratorPort(ABC):
     @abstractmethod
     async def run(
-        self , user:User , session_id:str, message:str, *, approved:bool = False) -> AgentState: ...
+        self,
+        user: User,
+        session_id: str,
+        message: str,
+        *,
+        approved: bool = False,
+        long_term_context: str = "",
+    ) -> AgentState: ...
 
     @abstractmethod
     async def stream(
-        self , user:User , session_id:str, message:str, *, approved:bool = False
-    ) -> AsyncIterator[AgentActivity| str]:
+        self,
+        user: User,
+        session_id: str,
+        message: str,
+        *,
+        approved: bool = False,
+        long_term_context: str = "",
+    ) -> AsyncIterator[AgentActivity | str]:
         yield ""

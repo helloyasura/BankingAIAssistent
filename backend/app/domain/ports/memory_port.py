@@ -10,3 +10,11 @@ class MemoryPort(ABC):
 
     @abstractmethod
     async def clear_history(self , session_id:str) -> None: ...
+
+    async def get_long_term_context(self, session_id: str) -> str:
+        return ""
+
+    async def save_turn_summary(
+        self, session_id: str, user_message: str, assistant_answer: str
+    ) -> None:
+        return None

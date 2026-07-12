@@ -5,7 +5,15 @@ from app.domain.ports.agent_port import AgentOrchestratorPort
 
 
 class StubAgentOrchestrator(AgentOrchestratorPort):
-    async def run(self, user: User, session_id: str, message: str, *, approved: bool = False) -> AgentState:
+    async def run(
+        self,
+        user: User,
+        session_id: str,
+        message: str,
+        *,
+        approved: bool = False,
+        long_term_context: str = "",
+    ) -> AgentState:
         activities = [
             AgentActivity(AgentNode.SUPERVISOR, "completed", "Routed to retrieval."),
             AgentActivity(AgentNode.RETRIEVAL, "completed", "Stub search — 0 chunks."),
@@ -14,8 +22,18 @@ class StubAgentOrchestrator(AgentOrchestratorPort):
         answer = f"Hello {user.display_name}! You asked: \"{message}\""
         return AgentState(session_id=session_id, activities=activities, final_answer=answer, validation_passed=True)
 
-    async def stream(self, user: User, session_id: str, message: str, *, approved: bool = False) -> AsyncIterator[AgentActivity | str]:
-        state = await self.run(user, session_id, message, approved=approved)
+    async def stream(
+        self,
+        user: User,
+        session_id: str,
+        message: str,
+        *,
+        approved: bool = False,
+        long_term_context: str = "",
+    ) -> AsyncIterator[AgentActivity | str]:
+        state = await self.run(
+            user, session_id, message, approved=approved, long_term_context=long_term_context
+        )
         for activity in state.activities:
             yield activity
         if state.final_answer:

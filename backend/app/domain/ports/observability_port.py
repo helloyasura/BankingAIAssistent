@@ -9,3 +9,6 @@ class ObservabilityPort(ABC):
     @abstractmethod
     async def trace_run(self, name: str, **metadata: Any) -> AsyncIterator[None]:
         yield  # pragma: no cover
+
+    async def log_feedback(self, **metadata: Any) -> None:
+        return None

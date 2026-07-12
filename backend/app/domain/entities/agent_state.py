@@ -30,3 +30,4 @@ class AgentState:
     activities: list[AgentActivity] = field(default_factory=list)
     final_answer: str | None = None
     validation_passed: bool | None = None
+    awaiting_approval: bool = False

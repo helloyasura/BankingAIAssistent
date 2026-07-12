@@ -1,0 +1,10 @@
+{
+    "id": "ONCALL-HANDBOOK-PAY-001",
+    "title": "Payments On-Call Handbook",
+    "document_type": "handbook",
+    "department": "payments",
+    "access_level": "public",
+    "created_date": "2024-02-05",
+    "tags": ["on-call", "payments", "handbook", "runbook"],
+    "content": "Payments On-Call Handbook\n\nScope: Primary guide for engineers on payments rotation.\n\nOn-Call Responsibilities:\n- Monitor PagerDuty and #payments-incidents Slack channel.\n- Acknowledge Sev-1 pages within 5 minutes; Sev-2 within 15 minutes.\n- Execute Payment Outage Runbook for any payment degradation or outage.\n\nFirst 15 Minutes Checklist:\n1. Acknowledge alert and assess severity (see Payment SLA Policy).\n2. Open incident bridge if Sev-1.\n3. Check Grafana Payments-Prod dashboard: latency, errors, pool metrics.\n4. Run synthetic probe: pay-probe --env prod.\n5. Post initial status to #payments-incidents.\n\nKey Runbooks and References:\n- Payment Outage Runbook (detection, triage, escalation, recovery, comms)\n- Payment SLA Policy (severity levels and targets)\n- Escalation Matrix (internal — analyst access required for full contacts)\n\nHandoff:\n- End-of-shift summary in PagerDuty log.\n- Open incidents must be documented before rotation ends.\n\nTraining: New on-call engineers must complete shadow rotation and runbook walkthrough before taking primary."
+}

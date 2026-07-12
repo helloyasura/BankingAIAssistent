@@ -1,0 +1,10 @@
+{
+    "id": "ESC-MATRIX-PAY-001",
+    "title": "Payments Incident Escalation Matrix",
+    "document_type": "reference",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2024-01-20",
+    "tags": ["escalation", "on-call", "payments", "incident-response"],
+    "content": "Payments Incident Escalation Matrix\n\nUse this matrix when Payment Outage Runbook escalation step is reached.\n\nSev-1 Escalation Path (time from incident start):\n- T+0 min: L1 Payments On-Call (PagerDuty: payments-oncall-primary)\n- T+10 min: L2 Payments Engineering Lead (if no mitigation)\n- T+20 min: L3 Platform SRE + DBA on-call\n- T+30 min: Incident Commander + VP Payments\n- T+45 min: CTO office notification for customer-visible outage > 30 min\n\nSev-2 Escalation Path:\n- T+0: L1 On-Call via Slack #payments-incidents\n- T+30 min: L2 Engineering Lead if unresolved\n- T+2 hr: L3 Platform if infrastructure suspected\n\nContact Roles:\n- L1 On-Call: First responder, runs runbook triage and recovery steps.\n- L2 Engineering Lead: Code rollback, feature flags, application-level fixes.\n- L3 Platform/DBA: Database pool tuning, infra scaling, network/firewall issues.\n- Incident Commander: Cross-team coordination, comms approval, severity calls.\n\nExternal Escalation:\n- Payment gateway vendor (primary): Tier-2 support after 15 min Sev-1.\n- Card network liaison: For scheme-wide authorization failures.\n\nDe-escalation: Downgrade severity only after 30 minutes of stable metrics per SLA Policy targets."
+}

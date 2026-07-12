@@ -1,0 +1,10 @@
+{
+    "id": "PAY-SLA-001",
+    "title": "Payment Processing SLA Policy — Targets and Severity Levels",
+    "document_type": "policy",
+    "department": "payments",
+    "access_level": "public",
+    "created_date": "2024-01-15",
+    "tags": ["sla", "payments", "severity", "latency", "availability"],
+    "content": "Payment Processing SLA Policy\n\nAvailability Target: 99.95% monthly uptime for payment authorization and settlement.\n\nLatency Targets:\n- P50 authorization latency: < 200ms\n- P95 authorization latency: < 500ms\n- P99 authorization latency: < 1000ms\n- End-to-end settlement confirmation: < 30 seconds\n\nError Rate Target: < 0.1% of transactions per rolling 5-minute window.\n\nSeverity Levels:\n\nSev-1 (Critical):\n- Complete payment outage or > 50% transaction failure rate.\n- Response: Immediate page, Incident Commander within 10 min, executive notify within 30 min.\n- Resolution target: 1 hour.\n\nSev-2 (Major):\n- Degraded performance: P95 latency 500ms–2000ms or error rate 0.1%–1%.\n- Response: On-call ack within 15 min, status updates every 30 min.\n- Resolution target: 4 hours.\n\nSev-3 (Minor):\n- Isolated errors affecting < 5% of traffic or single merchant/rail.\n- Response: Ticket queue, business-hours remediation.\n- Resolution target: 24 hours.\n\nSev-4 (Informational):\n- Non-customer-impacting anomalies, monitoring gaps.\n- Response: Backlog item, no page.\n\nMeasurement: SLIs computed from production metrics in Grafana Payments-Prod dashboard. Breaches trigger automated alerts per Payment Outage Runbook."
+}

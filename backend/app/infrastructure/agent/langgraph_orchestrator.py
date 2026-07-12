@@ -7,6 +7,7 @@ from app.domain.ports.llm_port import LLMPort
 from app.domain.ports.mcp_port import MCPPort
 from app.domain.ports.python_analysis_port import PythonAnalysisPort
 from app.domain.ports.vector_store_port import VectorStorePort
+from app.domain.services.approval_gate import ApprovalGateService
 from app.domain.services.tool_authorization import ToolAuthorizationService
 from app.infrastructure.agent.graph.builder import build_agent_graph
 from app.infrastructure.agent.graph.nodes import GraphNodes
@@ -20,29 +21,52 @@ class LangGraphOrchestrator(AgentOrchestratorPort):
         mcp: MCPPort,
         python_analysis: PythonAnalysisPort,
         authorization: ToolAuthorizationService | None = None,
+        approval_gate: ApprovalGateService | None = None,
     ) -> None:
+        self._approval_gate = approval_gate or ApprovalGateService()
         nodes = GraphNodes(
             vector_store,
             llm,
             mcp,
             python_analysis,
             authorization=authorization,
+            approval_gate=self._approval_gate,
         )
-        self._graph = build_agent_graph(nodes)
+        self._graph = build_agent_graph(nodes, self._approval_gate)
 
     async def run(
-        self, user: User, session_id: str, message: str, *, approved: bool = False
+        self,
+        user: User,
+        session_id: str,
+        message: str,
+        *,
+        approved: bool = False,
+        long_term_context: str = "",
     ) -> AgentState:
-        result = await self._graph.ainvoke(self._initial_state(user, session_id, message))
+        result = await self._graph.ainvoke(
+            self._initial_state(
+                user, session_id, message, approved=approved, long_term_context=long_term_context
+            )
+        )
         return self._to_agent_state(session_id, result)
 
     async def stream(
-        self, user: User, session_id: str, message: str, *, approved: bool = False
+        self,
+        user: User,
+        session_id: str,
+        message: str,
+        *,
+        approved: bool = False,
+        long_term_context: str = "",
     ) -> AsyncIterator[AgentActivity | str]:
         seen_activities = 0
         final_answer: str | None = None
 
-        async for chunk in self._graph.astream(self._initial_state(user, session_id, message)):
+        async for chunk in self._graph.astream(
+            self._initial_state(
+                user, session_id, message, approved=approved, long_term_context=long_term_context
+            )
+        ):
             for node_output in chunk.values():
                 activities = node_output.get("activities", [])
                 while seen_activities < len(activities):
@@ -60,12 +84,22 @@ class LangGraphOrchestrator(AgentOrchestratorPort):
         if final_answer:
             yield final_answer
 
-    def _initial_state(self, user: User, session_id: str, message: str) -> dict:
+    def _initial_state(
+        self,
+        user: User,
+        session_id: str,
+        message: str,
+        *,
+        approved: bool = False,
+        long_term_context: str = "",
+    ) -> dict:
         return {
             "session_id": session_id,
             "user_id": user.id,
             "user_role": user.role.value,
             "message": message,
+            "approved": approved,
+            "long_term_context": long_term_context,
             "activities": [],
             "tool_results": [],
         }
@@ -85,4 +119,5 @@ class LangGraphOrchestrator(AgentOrchestratorPort):
             activities=activities,
             final_answer=result.get("final_answer"),
             validation_passed=result.get("validation_passed"),
+            awaiting_approval=result.get("awaiting_approval", False),
         )

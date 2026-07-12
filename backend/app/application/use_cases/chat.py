@@ -36,28 +36,42 @@ class ChatUseCase:
             )
 
         history = await self._memory.get_history(session_id)
+        long_term_context = await self._memory.get_long_term_context(session_id)
         await self._memory.add_message(session_id, Message(content=request.message, role=MessageRole.USER))
 
         async with self._observability.trace_run(
             "chat", session_id=session_id, user_id=user.id
         ):
             state = await self._agent.run(
-                user, session_id, request.message, approved=request.approved
+                user,
+                session_id,
+                request.message,
+                approved=request.approved,
+                long_term_context=long_term_context,
             )
 
-        if state.final_answer:
+        if state.final_answer and not state.awaiting_approval:
             await self._memory.add_message(
                 session_id, Message(content=state.final_answer, role=MessageRole.ASSISTANT)
+            )
+            await self._memory.save_turn_summary(
+                session_id, request.message, state.final_answer
             )
 
         return ChatResponse(
             session_id=session_id,
             answer=state.final_answer or "No response.",
             activities=[
-                AgentActivityDTO(node=a.node.value, status=a.status, detail=a.detail)
+                AgentActivityDTO(
+                    node=a.node.value,
+                    status=a.status,
+                    detail=a.detail,
+                    metadata=a.metadata,
+                )
                 for a in state.activities
             ],
             validation_passed=state.validation_passed,
+            awaiting_approval=state.awaiting_approval,
             memory_message_count=len(history) + 1,
         )
 
@@ -77,19 +91,33 @@ class ChatUseCase:
         await self._memory.add_message(
             session_id, Message(content=request.message, role=MessageRole.USER)
         )
+        long_term_context = await self._memory.get_long_term_context(session_id)
 
         answer_content: str | None = None
+        awaiting_approval = False
         try:
             async with self._observability.trace_run(
                 "chat", session_id=session_id, user_id=user.id
             ):
                 async for event in self._agent.stream(
-                    user, session_id, request.message, approved=request.approved
+                    user,
+                    session_id,
+                    request.message,
+                    approved=request.approved,
+                    long_term_context=long_term_context,
                 ):
                     if isinstance(event, str):
                         answer_content = event
-                        yield {"type": "answer", "session_id": session_id, "content": event}
+                        yield {
+                            "type": "answer",
+                            "session_id": session_id,
+                            "content": event,
+                            "validation_passed": True,
+                            "awaiting_approval": awaiting_approval,
+                        }
                     else:
+                        if event.node.value == "human_approval":
+                            awaiting_approval = True
                         yield {
                             "type": "activity",
                             "session_id": session_id,
@@ -104,8 +132,11 @@ class ChatUseCase:
             answer_content = fallback
             yield {"type": "answer", "session_id": session_id, "content": fallback}
 
-        if answer_content:
+        if answer_content and not awaiting_approval:
             await self._memory.add_message(
                 session_id,
                 Message(content=answer_content, role=MessageRole.ASSISTANT),
+            )
+            await self._memory.save_turn_summary(
+                session_id, request.message, answer_content
             )
